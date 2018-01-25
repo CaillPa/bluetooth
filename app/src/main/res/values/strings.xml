@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">bluetooth demo</string>
+    <string name="txt_btn_BT">Bluetooth</string>
+    <string name="txt_photo_paired">Paired device : %s\nAddress : %s</string>
+</resources>
