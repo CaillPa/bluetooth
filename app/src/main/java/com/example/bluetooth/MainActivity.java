@@ -208,6 +208,7 @@ public class MainActivity extends AppCompatActivity {
         final Handler handler = new Handler();
         pb.setVisibility(View.VISIBLE);
         btDevices.clear();
+        btDevices.addAll(pairedDevices);
         adapter.notifyDataSetChanged();
         btnScan.setEnabled(false);
         Runnable runnable = new Runnable() {

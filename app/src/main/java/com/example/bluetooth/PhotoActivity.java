@@ -35,12 +35,16 @@ public class PhotoActivity extends AppCompatActivity {
     private TextView txtPaired;
 
     private Bitmap bmpImage;
+    private Handler handler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_photo);
 
+        /* ****************************************
+            findViewById
+         */
         tglBtn = findViewById(R.id.tglBtn);
         btnPhoto = findViewById(R.id.btnPhoto);
         btnEnvoyer = findViewById(R.id.btnEnvoyer);
@@ -52,20 +56,23 @@ public class PhotoActivity extends AppCompatActivity {
         final BluetoothDevice device = intent.getParcelableExtra("device");
         txtPaired.setText(String.format(getString(R.string.txt_photo_paired), device.getName(), device.getAddress()));
         final BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        handler = new Handler();
 
         // checkButton setup
-        tglBtn.setChecked(true);
+        tglBtn.setChecked(false);
         checkReceiverMode();
 
+        /* ****************************************
+            clickListeners
+         */
         tglBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 checkReceiverMode();
-                final Handler handler = new Handler();
                 if(tglBtn.isChecked()) {
-                    new AcceptThread(bluetoothAdapter, handler).start();
+                    new AcceptThread(bluetoothAdapter).start();
                 } else {
-                    new AcceptThread(bluetoothAdapter, handler).cancel();
+                    new AcceptThread(bluetoothAdapter).cancel();
                 }
             }
         });
@@ -89,12 +96,14 @@ public class PhotoActivity extends AppCompatActivity {
     }
 
     private void checkReceiverMode() {
+        // enable/disable buttons
         btnEnvoyer.setEnabled(!tglBtn.isChecked());
         btnPhoto.setEnabled(!tglBtn.isChecked());
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        // update the BMP image when coming back from the cmaera app
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
             Bundle extras = data.getExtras();
             Bitmap imageBitmap = (Bitmap) extras.get("data");
@@ -104,6 +113,7 @@ public class PhotoActivity extends AppCompatActivity {
     }
 
     private void sendImage(Bitmap image, BluetoothSocket socket) throws IOException {
+        // write the BMP image to the socket's buffer
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         image.compress(Bitmap.CompressFormat.PNG, 100, stream);
         byte[] byteArray = stream.toByteArray();
@@ -117,7 +127,7 @@ public class PhotoActivity extends AppCompatActivity {
         return res;
     }
 
-    private void changeImage(final Bitmap image, Handler handler) {
+    private void changeImage(final Bitmap image) {
         handler.post(new Runnable() {
             @Override
             public void run() {
@@ -173,11 +183,9 @@ public class PhotoActivity extends AppCompatActivity {
     private class AcceptThread extends Thread {
         private final BluetoothAdapter bluetoothAdapter;
         private final BluetoothServerSocket bluetoothServerSocket;
-        private final Handler handler;
 
-        public AcceptThread(BluetoothAdapter ba, Handler handler) {
+        public AcceptThread(BluetoothAdapter ba) {
             this.bluetoothAdapter = ba;
-            this.handler = handler;
             // temporary object because serverSocket is final
             BluetoothServerSocket tmp = null;
             try {
@@ -202,7 +210,7 @@ public class PhotoActivity extends AppCompatActivity {
 
                 if (socket != null) {
                     try {
-                        changeImage(receiveImage(socket), handler);
+                        changeImage(receiveImage(socket));
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
